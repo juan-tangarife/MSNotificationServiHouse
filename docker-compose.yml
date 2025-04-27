@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  ms-notification:
+    build:
+      context: .
+      args:
+        BUILDPLATFORM: linux/arm64
+    platform: linux/arm64
+    ports:
+      - "3333:3333"
+    volumes:
+      - .:/app
+      - /app/node_modules
