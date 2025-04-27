@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const {testNotification} = require("../controllers/notificationController.js")
-router.get('/', testNotification);
+const emailRoutes = require("./email.routes.js")
+const messageRoutes = require("./message.routes.js")
+
+router.use("/email", emailRoutes);
+router.use("/message", messageRoutes);
 
 module.exports = router;
