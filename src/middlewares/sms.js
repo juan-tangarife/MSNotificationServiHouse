@@ -8,6 +8,7 @@ const client = new twilio(accountSid, authToken);
 
 const sendSMS = async (phone, text) => {
     try {
+        console.log(`Enviando mensaje a ${phone} con el texto: ${text}`);
         client.messages.create({
             body: text,
             from: `${process.env.TWILIO_PHONE_NUMBER}`,
