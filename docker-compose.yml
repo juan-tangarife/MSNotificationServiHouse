@@ -6,6 +6,4 @@ services:
         BUILDPLATFORM: linux/arm64
     platform: linux/arm64
     ports:
-      - "${PORT}:${PORT}"
-    env_file:
-      - .env
+      - "8001:8001"
