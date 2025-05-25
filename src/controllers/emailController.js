@@ -2,7 +2,7 @@ const verifyEmailCodeRequest = require('../models/verifyEmailCodeRequest');
 const { PrismaClient } = require('@prisma/client'); //Importamos el cliente de prisma
 const prisma = new PrismaClient(); //Creamos una instancia de prisma
 const forgotPasswordHashEmailRequest = require('../models/forgotPasswordHashEmailRequest');
-const  sendEmail = require('../middlewares/email'); //Importamos la función de envío de correo electrónico
+const sendEmail = require('../middlewares/email'); //Importamos la función de envío de correo electrónico
 const verifyToken = require('../middlewares/auth'); //Importamos la función de verificación de token
 const lowStockAlertEmailRequest = require('../models/lowStockAlertEmailRequest');
 require('dotenv').config(); //Cargamos las variables de entorno
@@ -35,25 +35,25 @@ const sendVerifyCode = async (req, res) => {
             return res.status(404).json({
                 status: false,
                 code: 404,
-                 message: 'Template for this event not found'
-                 });
+                message: 'Template for this event not found'
+            });
         }
         templateData.template = templateData.body.replace(/{{code}}/g, code)
-                                                 .replace(/{{name}}/g, name);
+            .replace(/{{name}}/g, name);
         const emailSent = await sendEmail(email, templateData.subject, templateData.template);
         if (!emailSent) {
-            return res.status(500).json({ 
+            return res.status(500).json({
                 status: false,
                 code: 500,
                 message: 'Failed to send email'
-             });
+            });
         }
         res.status(200).json({
             status: true,
             code: 200,
             message: 'Email sent successfully',
         });
-        
+
     } catch (error) {
         res.status(500).json({
             status: false,
@@ -93,25 +93,25 @@ const send2FACode = async (req, res) => {
             return res.status(404).json({
                 status: false,
                 code: 404,
-                 message: 'Template for this event not found'
-                 });
+                message: 'Template for this event not found'
+            });
         }
         templateData.template = templateData.body.replace(/{{code}}/g, code)
-                                                 .replace(/{{name}}/g, name);
+            .replace(/{{name}}/g, name);
         const emailSent = await sendEmail(email, templateData.subject, templateData.template);
         if (!emailSent) {
-            return res.status(500).json({ 
+            return res.status(500).json({
                 status: false,
                 code: 500,
                 message: 'Failed to send email'
-             });
+            });
         }
         res.status(200).json({
             status: true,
             code: 200,
             message: 'Email sent successfully',
         });
-        
+
     } catch (error) {
         res.status(500).json({
             status: false,
@@ -151,25 +151,25 @@ const sendForgotPasswordHash = async (req, res) => {
             return res.status(404).json({
                 status: false,
                 code: 404,
-                 message: 'Template for this event not found'
-                 });
+                message: 'Template for this event not found'
+            });
         }
         templateData.template = templateData.body.replace(/{{hash}}/g, hash)
-                                                 .replace(/{{name}}/g, name);
+            .replace(/{{name}}/g, name);
         const emailSent = await sendEmail(email, templateData.subject, templateData.template);
         if (!emailSent) {
-            return res.status(500).json({ 
+            return res.status(500).json({
                 status: false,
                 code: 500,
                 message: 'Failed to send email'
-             });
+            });
         }
         res.status(200).json({
             status: true,
             code: 200,
             message: 'Email sent successfully',
         });
-        
+
     } catch (error) {
         res.status(500).json({
             status: false,
@@ -209,25 +209,25 @@ const sendRestorePasswordHash = async (req, res) => {
             return res.status(404).json({
                 status: false,
                 code: 404,
-                 message: 'Template for this event not found'
-                 });
+                message: 'Template for this event not found'
+            });
         }
         templateData.template = templateData.body.replace(/{{hash}}/g, hash)
-                                                 .replace(/{{name}}/g, name);
+            .replace(/{{name}}/g, name);
         const emailSent = await sendEmail(email, templateData.subject, templateData.template);
         if (!emailSent) {
-            return res.status(500).json({ 
+            return res.status(500).json({
                 status: false,
                 code: 500,
                 message: 'Failed to send email'
-             });
+            });
         }
         res.status(200).json({
             status: true,
             code: 200,
             message: 'Email sent successfully',
         });
-        
+
     } catch (error) {
         res.status(500).json({
             status: false,
@@ -267,28 +267,84 @@ const sendLowStockAlert = async (req, res) => {
             return res.status(404).json({
                 status: false,
                 code: 404,
-                 message: 'Template for this event not found'
-                 });
+                message: 'Template for this event not found'
+            });
         }
         templateData.template = templateData.body.replace(/{{name}}/g, name)
-                                                    .replace(/{{product}}/g, product)
-                                                    .replace(/{{storage}}/g, storage)
-                                                    .replace(/{{amount}}/g, amount)
-                                                    .replace(/{{min_amount}}/g, min_amount);
+            .replace(/{{product}}/g, product)
+            .replace(/{{storage}}/g, storage)
+            .replace(/{{amount}}/g, amount)
+            .replace(/{{min_amount}}/g, min_amount);
         const emailSent = await sendEmail(email, templateData.subject, templateData.template);
         if (!emailSent) {
-            return res.status(500).json({ 
+            return res.status(500).json({
                 status: false,
                 code: 500,
                 message: 'Failed to send email'
-             });
+            });
         }
         res.status(200).json({
             status: true,
             code: 200,
             message: 'Email sent successfully',
         });
-        
+
+    } catch (error) {
+        res.status(500).json({
+            status: false,
+            code: 500,
+            message: 'Failed to send email',
+            error: error.message
+        });
+    }
+}
+
+const sendOrderAssigned = async (req, res) => {
+    try {
+        const { message, success } = verifyToken(req);
+        if (!success) {
+            return res.status(401).json({
+                status: false,
+                code: 401,
+                message: message
+            });
+        }
+        if (!req.body) {
+            return res.status(400).json({
+                status: false,
+                code: 400,
+                message: 'Request body is required'
+            });
+        }
+        const { email, order_number, name } = req.body;
+        const templateData = await prisma.mailTemplates.findFirst({
+            where: {
+                event: 'ORDERASSIGNED',
+                isActive: true
+            }
+        });
+        if (!templateData) {
+            return res.status(404).json({
+                status: false,
+                code: 404,
+                message: 'Template for this event not found'
+            });
+        }
+        templateData.template = templateData.body.replace(/{{order_number}}/g, order_number)
+            .replace(/{{name}}/g, name);
+        const emailSent = await sendEmail(email, templateData.subject, templateData.template);
+        if (!emailSent) {
+            return res.status(500).json({
+                status: false,
+                code: 500,
+                message: 'Failed to send email'
+            });
+        }
+        res.status(200).json({
+            status: true,
+            code: 200,
+            message: 'Email sent successfully',
+        });
     } catch (error) {
         res.status(500).json({
             status: false,
@@ -300,5 +356,5 @@ const sendLowStockAlert = async (req, res) => {
 }
 
 module.exports = {
-    sendVerifyCode, send2FACode, sendForgotPasswordHash, sendRestorePasswordHash, sendLowStockAlert
+    sendVerifyCode, send2FACode, sendForgotPasswordHash, sendRestorePasswordHash, sendLowStockAlert, sendOrderAssigned
 };
