@@ -355,6 +355,109 @@ const sendOrderAssigned = async (req, res) => {
     }
 }
 
+const sendOrderCreated = async (req, res) => {
+    try {
+        const { message, success } = verifyToken(req);
+        if (!success) {
+            return res.status(401).json({
+                status: false,
+                code: 401,
+                message: message
+            });
+        }
+        if (!req.body) {
+            return res.status(400).json({
+                status: false,
+                code: 400,
+                message: 'Request body is required'
+            });
+        }
+        const { email, order_number, name } = req.body;
+        const templateData = await prisma.mailTemplates.findFirst({
+            where: {
+                event: 'CONFIRMORDER',
+                isActive: true
+            }
+        });
+        if (!templateData) {
+            return res.status(404).json({
+                status: false,
+                code: 404,
+                message: 'Template for this event not found'
+            });
+        }
+        const order = await prisma.order.findUnique({
+            where: {
+                order_number: order_number
+            },
+            include:{
+                stockTransactions: {
+                    include: {
+                        Stock: {
+                            include: {
+                                Product: true
+                            }
+                        }
+                    }
+                },
+                delivery:true
+            }
+        })
+        let productsRows = '';
+        if (order && order.stockTransactions && order.stockTransactions.length > 0) {
+            productsRows = order.stockTransactions.map(tx => `
+                <tr>
+                  <td>${tx.Stock.Product.name ? tx.Stock.Product.name : 'N/A'}</td>
+                  <td style="text-align: right;">${tx.amount}</td>
+                </tr>
+            `).join('');
+        } else {
+            productsRows = `<tr><td colspan="2">No products found</td></tr>`;
+        }
+        console.log(JSON.stringify(order))
+        const deliveryName = order && order.delivery ? order.delivery.full_name : 'N/A';
+        const deliveryEmail = order && order.delivery ? order.delivery.email : 'N/A';
+
+        let html = templateData.body
+            .replace(/{{name}}/g, name)
+            .replace('{{#each products}}', '')
+            .replace('{{/each}}', '')
+            .replace('{{delivery.name}}', deliveryName)
+            .replace('{{delivery.email}}', deliveryEmail)
+            .replace('{{order_number}}', order_number);
+
+        html = html.replace(
+            /<tbody>[\s\S]*<\/tbody>/,
+            `<tbody>${productsRows}</tbody>`
+        );
+
+        templateData.template = html;
+        const emailSent = await sendEmail(email, templateData.subject, templateData.template);
+
+        if (!emailSent) {
+            return res.status(500).json({
+                status: false,
+                code: 500,
+                message: 'Failed to send email'
+            });
+        }
+        res.status(200).json({
+            status: true,
+            code: 200,
+            message: 'Email sent successfully',
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: false,
+            code: 500,
+            message: 'Failed to send email',
+            error: error.message
+        });
+    }
+}
+
+
 module.exports = {
-    sendVerifyCode, send2FACode, sendForgotPasswordHash, sendRestorePasswordHash, sendLowStockAlert, sendOrderAssigned
+    sendVerifyCode, send2FACode, sendForgotPasswordHash, sendRestorePasswordHash, sendLowStockAlert, sendOrderAssigned,
+    sendOrderCreated
 };
