@@ -5,6 +5,7 @@ const forgotPasswordHashEmailRequest = require('../models/forgotPasswordHashEmai
 const sendEmail = require('../middlewares/email'); //Importamos la función de envío de correo electrónico
 const verifyToken = require('../middlewares/auth'); //Importamos la función de verificación de token
 const lowStockAlertEmailRequest = require('../models/lowStockAlertEmailRequest');
+const newPasswordRequest = require('../models/newPasswordRequest');
 require('dotenv').config(); //Cargamos las variables de entorno
 const sendVerifyCode = async (req, res) => {
     try {
@@ -456,8 +457,66 @@ const sendOrderCreated = async (req, res) => {
     }
 }
 
+const sendNewPassword = async (req, res) => {
+    try {
+        const { message, success } = verifyToken(req);
+        if (!success) {
+            return res.status(401).json({
+                status: false,
+                code: 401,
+                message: message
+            });
+        }
+        if (!req.body) {
+            return res.status(400).json({
+                status: false,
+                code: 400,
+                message: 'Request body is required'
+            });
+        }
+        newPasswordRequest.validate(req.body);
+        const { email, name, new_password } = req.body;
+        const templateData = await prisma.mailTemplates.findFirst({
+            where: {
+                event: 'NEWPASSWORD',
+                isActive: true
+            }
+        });
+        if (!templateData) {
+            return res.status(404).json({
+                status: false,
+                code: 404,
+                message: 'Template for this event not found'
+            });
+        }
+        templateData.template = templateData.body.replace(/{{new_password}}/g, new_password)
+            .replace(/{{name}}/g, name);
+        const emailSent = await sendEmail(email, templateData.subject, templateData.template);
+        if (!emailSent) {
+            return res.status(500).json({
+                status: false,
+                code: 500,
+                message: 'Failed to send email'
+            });
+        }
+        res.status(200).json({
+            status: true,
+            code: 200,
+            message: 'Email sent successfully',
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            status: false,
+            code: 500,
+            message: 'Failed to send email',
+            error: error.message
+        });
+    }
+}
+
 
 module.exports = {
     sendVerifyCode, send2FACode, sendForgotPasswordHash, sendRestorePasswordHash, sendLowStockAlert, sendOrderAssigned,
-    sendOrderCreated
+    sendOrderCreated, sendNewPassword
 };
