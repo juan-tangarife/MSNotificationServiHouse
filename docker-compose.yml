@@ -6,4 +6,10 @@ services:
         BUILDPLATFORM: linux/arm64
     platform: linux/arm64
     ports:
-      - "8001:8001"
+      - "8010:8010"
+    networks:
+      - gateway-network
+
+networks:
+  gateway-network:
+    external: true
